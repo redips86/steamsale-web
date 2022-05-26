@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.steamsale.web.persistence.AppMapper">
+
+	<select id="selectMainSaleInfo22" resultType="kr.co.steamsale.web.model.MainInfo">
+		SELECT	A.TYPE type, 
+				A.ID id, 
+				A.TITLE title,
+				B.HEADER_IMAGE headerImage,
+				CASE WHEN CHAR_LENGTH(B.NAME) > 35 THEN CONCAT(LEFT(B.NAME, 35), '..') ELSE B.NAME END name,
+				CONCAT('/', A.TYPE, '/', A.ID) linkUrl,
+				CASE WHEN C.NAME IS NULL THEN 'others' ELSE C.NAME END typeCss
+		FROM	SALE A
+		LEFT JOIN APP B ON A.ID = B.APP_ID AND B.TYPE = 'game'
+		LEFT JOIN SALE_MAP C ON A.TITLE = C.TITLE
+		WHERE	B.APP_ID > 0
+		AND 	A.END_DATE >= NOW()
+		ORDER BY RAND()
+		LIMIT	0, 12;
+	</select>
+	
+	<select id="selectMainSaleInfo" resultType="kr.co.steamsale.web.model.MainInfo">
+		SELECT	B.TYPE type, 
+				B.APP_ID id, 
+				'최고 인기 게임' title,
+				B.HEADER_IMAGE headerImage,
+				CASE WHEN CHAR_LENGTH(B.NAME) > 35 THEN CONCAT(LEFT(B.NAME, 35), '..') ELSE B.NAME END name,
+				CONCAT('/', 'app', '/', B.APP_ID) linkUrl,
+				'others' typeCss
+		FROM	APP B
+		WHERE	B.APP_ID > 0
+        AND		B.type = 'game'
+		AND		B.META_SCORE > 80
+		ORDER BY RAND()
+		LIMIT	0, 12;
+	</select>
+	
+	<select id="selectAppMainInfo" resultType="kr.co.steamsale.web.model.AppModel" parameterType="java.util.HashMap">
+		SELECT 	`APP_ID` appId,
+			    `NAME` name,
+			    `TYPE` type,
+			    `REQUIRED_AGE` requiredAge,
+			    CASE WHEN CHAR_LENGTH(`ABOUT_THE_GAME`) > 300 THEN CONCAT(LEFT(`ABOUT_THE_GAME`, 300),'..') ELSE `ABOUT_THE_GAME` END aboutTheGame,
+			    CASE WHEN CHAR_LENGTH(`DESCRIPTION`) > 300 THEN CONCAT(LEFT(`DESCRIPTION`, 300),'..') ELSE `DESCRIPTION` END description,
+			    `SUPPORTED_LANGUAGES` supportedLanguages,
+			    `HEADER_IMAGE` headerImage,
+			    `WEBSITE` website,
+			    `PC_REQ_MIN` pcReqMin,
+			    `PC_REQ_REC` pcReqRec,
+			    `MAC_REQ_MIN` macReqMin,
+			    `MAC_REQ_REC` macReqRec,
+			    `LINUX_REQ_MIN` linuxReqMin,
+			    `LINUX_REQ_REC` linuxReqRec,
+			    `DEVELOPERS` developers,
+			    `PUBLISHERS` publishers,
+			    `LINUX_PLATFORM` linuxPlatform,
+			    `MAC_PLATFORM` macPlatform,
+			    `WINDOWS_PLATFORM` windowsPlatform,
+			    `META_SCORE` metaScore,
+			    `META_URL` metaUrl,
+			    `RECOMMENDATIONS` recommendations,
+			    `COMING_SOON` commingSoon,
+			    `RELEASE_DATE` releaseDate,
+			    `IS_FREE` isFree
+		FROM 	`app`
+		WHERE	`APP_ID` = #{id};
+	</select>
+	
+	<select id="selectAppPriceChartInfo" resultType="kr.co.steamsale.web.model.AppPrice" parameterType="java.util.HashMap">
+		SELECT	`ID` id,
+				`EXEC_DATE` execDate,
+				`EXEC_TIME` execTime,
+				`USD` usd,
+				`KRW` krw,
+				CONCAT(date_format(str_to_date(EXEC_DATE, '%Y%m%d'),'%Y-%m-%d'), ' ', date_format(str_to_date(EXEC_TIME, '%H%i'), '%h:%i')) dateField
+		FROM	`PRICE_LOG`
+		WHERE	`ID` = #{appId};
+	</select>
+	
+	<select id="selectPackageMainInfo" resultType="kr.co.steamsale.web.model.PackageModel" parameterType="java.util.HashMap">
+		SELECT `PACKAGE_ID` packageId,
+					`NAME` name,
+					`PAGE_IMAGE` pageImage,
+					`HEADER_IMAGE` headerImage,
+					`SMALL_LOGO` smallLogo,
+					`LINUX_PLATFORM` linuxPlatform,
+					`MAC_PLATFORM` macPlatform,
+					`WINDOWS_PLATFORM` windowsPlatform,
+					`COMING_SOON` comingSoon,
+					`RELEASE_DATE` releaseDate
+		FROM 		`package`
+		WHERE		`PACKAGE_ID` = #{id};
+	</select>
+	
+	<select id="selectPackagePriceInfo" resultType="kr.co.steamsale.web.model.PackagePrice" parameterType="java.util.HashMap">
+		SELECT	`ID` id,
+				`EXEC_DATE` execDate,
+				`EXEC_TIME` execTime,
+				MAX(`KRW`) priceMax, 
+				MIN(`KRW`) priceMin,
+				(
+					SELECT 	`KRW` 
+					FROM 	`PACKAGE_PRICE_LOG`	
+					WHERE	`ID` = #{appId} 
+					ORDER BY `EXEC_DATE` desc, `EXEC_TIME` desc limit 0, 1
+				) priceCurr
+		FROM	`PACKAGE_PRICE_LOG`
+		WHERE	`ID` = #{id};
+	</select>
+	
+	<select id="selectPackagePriceChartInfo" resultType="kr.co.steamsale.web.model.PackagePrice" parameterType="java.util.HashMap">
+		SELECT	`ID` id,
+				`EXEC_DATE` execDate,
+				`EXEC_TIME` execTime,
+				`USD` usd,
+				`KRW` krw,
+				CONCAT(date_format(str_to_date(EXEC_DATE, '%Y%m%d'),'%Y-%m-%d'), ' ', date_format(str_to_date(EXEC_TIME, '%H%i'), '%h:%i')) dateField
+		FROM	`PACKAGE_PRICE_LOG`
+		WHERE	`ID` = #{id};
+	</select>
+	
+	<select id="selectAppPriceInfo" resultType="kr.co.steamsale.web.model.AppPrice" parameterType="java.util.HashMap">
+		SELECT	`ID` id,
+				`EXEC_DATE` execDate,
+				`EXEC_TIME` execTime,
+				MAX(`KRW`) priceMax, 
+				MIN(`KRW`) priceMin,
+				(
+					SELECT 	`KRW` 
+					FROM 	`PRICE_LOG`	
+					WHERE	`ID` = #{appId} 
+					ORDER BY `EXEC_DATE` desc, `EXEC_TIME` desc limit 0, 1
+				) priceCurr
+		FROM	`PRICE_LOG`
+		WHERE	`ID` = #{appId};
+	</select>
+	
+	<select id="selectAppPlayerInfo" resultType="kr.co.steamsale.web.model.AppPlayer" parameterType="java.util.HashMap">
+		SELECT	`ID` id,
+				`EXEC_DATE` execDate,
+				`EXEC_TIME` execTime,
+				MAX(`PLAYER_COUNT`) playerCountMax, 
+				AVG(`PLAYER_COUNT`) playerCountAvg,
+				MIN(`PLAYER_COUNT`) playerCountMin,
+				(
+					SELECT 	`PLAYER_COUNT` 
+					FROM 	`PLAYER_LOG`	
+					WHERE	`ID` = #{appId} 
+					ORDER BY `EXEC_DATE` desc, `EXEC_TIME` desc limit 0, 1
+				) playerCountCurr
+		FROM	`PLAYER_LOG`
+		WHERE	`ID` = #{appId};
+	</select>
+	
+	<select id="selectAppReviewInfo" resultType="kr.co.steamsale.web.model.AppReview" parameterType="java.util.HashMap">
+		SELECT	`APP_ID` appId,
+				`POSITIVE` positive,
+				`NEGATIVE` negative	
+		FROM	`APP`
+		WHERE	`APP_ID` = #{appId};
+	</select>
+	
+	<select id="selectSearchInfo" resultType="kr.co.steamsale.web.model.AppSearch" parameterType="java.util.HashMap">
+	SELECT	*
+	FROM
+	(
+		SELECT	A.`APP_ID` id,
+				A.`TYPE` type,
+				A.`HEADER_IMAGE` headerImage,
+		        A.`NAME` name,
+				A.`ABOUT_THE_GAME` aboutTheGame,
+		        B.`INITIAL_PRICE` initialPrice,
+		        B.`FINAL_PRICE` finalPrice,
+		        B.`DISCOUNT_PERCENT` discountPercent,
+				A.`POSITIVE` positive,
+				A.`NEGATIVE` negative
+		FROM	`APP` A
+		LEFT JOIN `PRICE` B ON  A.APP_ID = B.ID
+		WHERE	NAME LIKE CONCAT('%', #{name}, '%')
+		AND		A.`TYPE` IN ('game', 'mod', 'dlc')
+		<if test="appId != 0">
+			OR A.`APP_ID` = #{appId} 
+		</if>
+		
+		UNION ALL 
+		
+		SELECT	`PACKAGE_ID` id,
+				'sub' type,
+				`HEADER_IMAGE` headerImage,
+				`NAME` name,
+				'' aboutTheGame,
+				`INITIAL_PRICE` initialPrice,
+		        `FINAL_PRICE` finalPrice,
+		        `DISCOUNT_PERCENT` discountPercent,
+				0 positive,
+				0 negative	
+		FROM		PACKAGE
+		WHERE	NAME LIKE CONCAT('%', #{name}, '%')
+		AND		`HEADER_IMAGE` > ''
+		<if test="appId != 0">
+			OR `PACKAGE_ID` = #{appId} 
+		</if>
+	) X
+	ORDER BY X.discountPercent DESC
+	LIMIT	#{startIdx}, #{endIdx}
+	</select>
+	
+	<select id="selectSearchInfoTotal" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+	SELECT	COUNT(*)
+	FROM
+	(
+		SELECT	A.`APP_ID` id,
+				A.`TYPE` type,
+				A.`HEADER_IMAGE` headerImage,
+		        A.`NAME` name,
+				A.`ABOUT_THE_GAME` aboutTheGame,
+		        B.`INITIAL_PRICE` initialPrice,
+		        B.`FINAL_PRICE` finalPrice,
+		        B.`DISCOUNT_PERCENT` discountPercent,
+				A.`POSITIVE` positive,
+				A.`NEGATIVE` negative
+		FROM	`APP` A
+		LEFT JOIN `PRICE` B ON  A.APP_ID = B.ID
+		WHERE	NAME LIKE CONCAT('%', #{name}, '%')
+		AND		A.`TYPE` IN ('game', 'mod', 'dlc')
+		<if test="appId != 0">
+			OR A.`APP_ID` = #{appId} 
+		</if>
+		
+		UNION ALL 
+		
+		SELECT	`PACKAGE_ID` id,
+				'sub' type,
+				`HEADER_IMAGE` headerImage,
+				`NAME` name,
+				'' aboutTheGame,
+				`INITIAL_PRICE` initialPrice,
+		        `FINAL_PRICE` finalPrice,
+		        `DISCOUNT_PERCENT` discountPercent,
+				0 positive,
+				0 negative	
+		FROM		PACKAGE
+		WHERE	NAME LIKE CONCAT('%', #{name}, '%')
+		AND		`HEADER_IMAGE` > ''
+		<if test="appId != 0">
+			OR `PACKAGE_ID` = #{appId} 
+		</if>
+	) X
+	</select>
+	
+	<select id="selectSearchGenreInfo" resultType="kr.co.steamsale.web.model.AppGenre" parameterType="java.util.HashMap">
+		SELECT	A.APP_ID id,
+				C.GENRE_ID genreId,
+				C.DESCRIPTION description,
+				C.CSS css
+		FROM	`APP` A
+		LEFT JOIN `APP_GENRE` B ON  A.APP_ID = B.APP_ID
+		LEFT JOIN `GENRE` C ON B.GENRE_ID = C.GENRE_ID
+		WHERE	A.`APP_ID` = #{id} 
+		AND		A.`TYPE` IN ('game', 'mod', 'dlc')
+	</select>
+	
+	<select id="selectMainCountInfo" resultType="kr.co.steamsale.web.model.MainCount">
+		SELECT	MAX(totalAppCnt) totalAppCnt,
+				MAX(saleAppCnt) saleAppCnt,
+				MAX(totalPackageCnt) totalPackageCnt,
+				MAX(salePackageCnt) salePackageCnt
+		FROM
+		(
+			SELECT	SUM(TOTAL_CNT) totalAppCnt,
+					SUM(SALE_CNT) saleAppCnt,
+					0 totalPackageCnt,
+					0 salePackageCnt
+			FROM
+			(
+				SELECT	1 TOTAL_CNT ,
+						CASE WHEN B.DISCOUNT_PERCENT BETWEEN 1 AND 100 AND C.END_DATE >= NOW() THEN 1 ELSE 0 END SALE_CNT
+				FROM	APP A
+				LEFT JOIN PRICE B ON A.APP_ID = B.ID
+				LEFT JOIN SALE C ON A.APP_ID = C.ID AND C.TYPE = 'app'
+			)  X
+		
+			UNION ALL
+		
+			SELECT		0 totalAppCnt,
+						0 saleAppCnt,
+						SUM(TOTAL_CNT) totalPackageCnt,
+						SUM(SALE_CNT) salePackageCnt
+			FROM
+			(
+				SELECT	1 TOTAL_CNT,
+						CASE WHEN A.DISCOUNT_PERCENT BETWEEN 1 AND 100 AND C.END_DATE >= NOW() THEN 1 ELSE 0 END SALE_CNT
+				FROM	PACKAGE A
+				LEFT JOIN SALE C ON A.PACKAGE_ID = C.ID AND C.TYPE = 'sub'
+			) X
+		) Y
+	</select>
+	
+	<select id="selectSaleInfo" resultType="kr.co.steamsale.web.model.SaleInfo" parameterType="java.util.HashMap">
+	
+	SELECT	*
+	FROM
+	(
+		SELECT	A.TYPE type, 
+						A.ID id, 
+						CASE WHEN E.SALE_ID IS NULL THEN A.TITLE ELSE CONCAT('프랜차이즈 [', UPPER(E.SALE_ID), ']') END title,
+						CASE WHEN E.SALE_ID IS NULL THEN F.NAME ELSE CONCAT('franchise_', E.SALE_ID) END titleUrl,
+						CASE WHEN E.SALE_ID IS NULL THEN F.ORDER ELSE 999 END orderBy,
+						CASE WHEN B.HEADER_IMAGE IS NULL THEN C.HEADER_IMAGE ELSE B.HEADER_IMAGE END headerImage,
+						CASE WHEN B.NAME IS NULL THEN C.NAME ELSE B.NAME END name,
+						CONCAT('/', A.TYPE, '/', A.ID) linkUrl,
+						CASE WHEN IFNULL(D.DISCOUNT_PERCENT, 0) = 0 THEN C.INITIAL_PRICE ELSE D.INITIAL_PRICE END initialPrice,
+						CASE WHEN IFNULL(D.DISCOUNT_PERCENT, 0) = 0 THEN C.FINAL_PRICE ELSE D.FINAL_PRICE END finalPrice,
+						CASE WHEN IFNULL(D.DISCOUNT_PERCENT, 0) = 0 THEN C.DISCOUNT_PERCENT ELSE D.DISCOUNT_PERCENT END discountPercent,
+						B.POSITIVE positive,
+						B.NEGATIVE negative
+		FROM		SALE A
+		LEFT JOIN APP B ON A.ID = B.APP_ID AND B.TYPE IN ('game')
+		LEFT JOIN PACKAGE C ON A.ID = C.PACKAGE_ID AND A.TYPE = 'sub' AND C.HEADER_IMAGE > ''
+		LEFT JOIN PRICE D ON B.APP_ID = D.ID
+		LEFT JOIN FRANCHISE_CHILD E ON (B.APP_ID = E.ID OR C.PACKAGE_ID = E.ID)
+		LEFT JOIN SALE_MAP F ON A.TITLE = F.TITLE
+		WHERE	(B.APP_ID > 0 OR C.PACKAGE_ID > 0)
+		AND 	A.END_DATE >= NOW()
+		<if test="title != null" >
+        	AND CASE WHEN E.SALE_ID IS NULL THEN F.NAME ELSE CONCAT('franchise_', E.SALE_ID) END = #{title}
+   		</if>
+	) X
+	<![CDATA[
+	WHERE	X.discountPercent BETWEEN 1 AND 100
+	]]>
+	ORDER BY X.orderBy, X.discountPercent DESC, X.positive DESC, X.negative
+	LIMIT	#{startIdx}, #{endIdx}
+		;
+	
+	</select>
+	
+	<select id="selectSaleInfoTotal" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+	
+	SELECT	COUNT(*)
+	FROM
+	(
+		SELECT	A.TYPE type, 
+						A.ID id, 
+						CASE WHEN E.SALE_ID IS NULL THEN A.TITLE ELSE CONCAT('프랜차이즈 [', UPPER(E.SALE_ID), ']') END title,
+						CASE WHEN E.SALE_ID IS NULL THEN F.NAME ELSE CONCAT('franchise_', E.SALE_ID) END titleUrl,
+						CASE WHEN E.SALE_ID IS NULL THEN F.ORDER ELSE 999 END orderBy,
+						CASE WHEN B.HEADER_IMAGE IS NULL THEN C.HEADER_IMAGE ELSE B.HEADER_IMAGE END headerImage,
+						CASE WHEN B.NAME IS NULL THEN C.NAME ELSE B.NAME END name,
+						CONCAT('/', A.TYPE, '/', A.ID) linkUrl,
+						CASE WHEN IFNULL(D.DISCOUNT_PERCENT, 0) = 0 THEN C.INITIAL_PRICE ELSE D.INITIAL_PRICE END initialPrice,
+						CASE WHEN IFNULL(D.DISCOUNT_PERCENT, 0) = 0 THEN C.FINAL_PRICE ELSE D.FINAL_PRICE END finalPrice,
+						CASE WHEN IFNULL(D.DISCOUNT_PERCENT, 0) = 0 THEN C.DISCOUNT_PERCENT ELSE D.DISCOUNT_PERCENT END discountPercent,
+						B.POSITIVE positive,
+						B.NEGATIVE negative
+		FROM		SALE A
+		LEFT JOIN APP B ON A.ID = B.APP_ID AND B.TYPE IN ('game')
+		LEFT JOIN PACKAGE C ON A.ID = C.PACKAGE_ID AND A.TYPE = 'sub' AND C.HEADER_IMAGE > ''
+		LEFT JOIN PRICE D ON B.APP_ID = D.ID
+		LEFT JOIN FRANCHISE_CHILD E ON (B.APP_ID = E.ID OR C.PACKAGE_ID = E.ID)
+		LEFT JOIN SALE_MAP F ON A.TITLE = F.TITLE
+		WHERE	(B.APP_ID > 0 OR C.PACKAGE_ID > 0)
+		AND 	A.END_DATE >= NOW()
+		<if test="title != null" >
+        	AND CASE WHEN E.SALE_ID IS NULL THEN F.NAME ELSE CONCAT('franchise_', E.SALE_ID) END = #{title}
+   		</if>
+	) X
+	<![CDATA[
+	WHERE	X.discountPercent BETWEEN 1 AND 100
+	]]>
+	;
+	
+	</select>
+	
+	<select id="selectPackageAppsInfo" resultType="kr.co.steamsale.web.model.PackageApp" parameterType="java.util.HashMap">
+	
+	SELECT		PACKAGE_ID packageId,
+				B.APP_ID appId,
+				B.NAME name,
+				B.TYPE,
+				C.INITIAL_PRICE initialPrice,
+				C.FINAL_PRICE finalPrice,
+				C.DISCOUNT_PERCENT discountPercent
+	FROM		APP_PACKAGE A
+	LEFT JOIN 	APP B ON A.APP_ID = B.APP_ID
+	LEFT JOIN 	PRICE C ON B.APP_ID = C.ID
+	WHERE		A.PACKAGE_ID = #{packageId}
+	;
+	</select>
+	
+	<select id="selectAppsInfo" resultType="kr.co.steamsale.web.model.AppSearch" parameterType="java.util.HashMap">
+	
+	SELECT		APP_ID id,
+				NAME name,
+				HEADER_IMAGE headerImage,
+				CASE WHEN TYPE IS NULL THEN 'unknown' ELSE TYPE END type,
+				type_to_kor(TYPE) typeKor,
+				POSITIVE positive,
+				NEGATIVE negative
+	FROM		APP
+	<if test="type != 'all'" >
+    WHERE 		CASE WHEN #{type} = 'unknown' THEN TYPE IS NULL ELSE TYPE = #{type} END
+   	</if>
+	ORDER BY 	APP_ID
+	LIMIT		#{startIdx}, #{endIdx}
+	;
+	</select>
+	
+	<select id="selectAppsInfoTotal" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+	SELECT		COUNT(*)
+	FROM		APP
+	<if test="type != 'all'" >
+    WHERE 		TYPE = #{type}
+   	</if>
+	;
+	</select>
+	
+	<select id="selectTypeTitle" resultType="java.lang.String" parameterType="java.util.HashMap">
+	SELECT	type_to_kor(#{type});
+	</select>
+	
+	<select id="selectPackagesInfo" resultType="kr.co.steamsale.web.model.AppSearch" parameterType="java.util.HashMap">
+	
+	SELECT		PACKAGE_ID id,
+				NAME name,
+				HEADER_IMAGE headerImage,
+				'sub' type
+	FROM		PACKAGE
+	ORDER BY 	PACKAGE_ID
+	LIMIT		#{startIdx}, #{endIdx}
+	;
+	</select>
+	
+	<select id="selectPackagesInfoTotal" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+	SELECT		COUNT(*)
+	FROM		PACKAGE
+	;
+	</select>
+	
+	<select id="selectGenreInfo" resultType="kr.co.steamsale.web.model.AppSearch" parameterType="java.util.HashMap">
+	
+	SELECT	A.APP_ID id,
+				B.NAME name,
+				B.HEADER_IMAGE headerImage,
+				CASE WHEN TYPE IS NULL THEN 'unknown' ELSE TYPE END type,
+				type_to_kor(TYPE) typeKor,
+				POSITIVE positive,
+				NEGATIVE negative
+	FROM		APP_GENRE A
+	INNER JOIN APP B ON A.APP_ID = B.APP_ID
+	WHERE		A.GENRE_ID = #{genreId}
+	AND			B.`TYPE` IN ('game', 'mod', 'dlc')
+	ORDER BY 	A.APP_ID
+	LIMIT		#{startIdx}, #{endIdx}
+	;
+	</select>
+	
+	<select id="selectGenreInfoTotal" resultType="java.lang.Integer" parameterType="java.util.HashMap">
+	SELECT		COUNT(*)
+	FROM		APP_GENRE A
+	INNER JOIN APP B ON A.APP_ID = B.APP_ID
+	AND			B.`TYPE` IN ('game', 'mod', 'dlc')
+	WHERE		A.GENRE_ID = #{genreId}
+	;
+	</select>
+	
+	<select id="selectGenreTitle" resultType="java.lang.String" parameterType="java.util.HashMap">
+	SELECT		DESCRIPTION
+	FROM		GENRE
+	WHERE		GENRE_ID = #{genreId}
+	</select>
+</mapper>

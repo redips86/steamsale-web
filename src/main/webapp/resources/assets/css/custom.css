@@ -1,0 +1,4 @@
+/* Add here all your css styles (customizations) */
+input.red-placeholder::-webkit-input-placeholder {
+    color: #d9534f;
+}
